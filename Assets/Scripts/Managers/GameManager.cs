@@ -460,6 +460,13 @@ public class GameManager : MonoBehaviour
 
     // ─────────────────────────────────────────────────────────────────
     // Perguntas
+    //
+    // V3: público universitário. Soma e Subtração passam a usar números
+    // de duas casas (10-99) — pelo menos um dos dois operandos sempre
+    // tem duas casas, o outro varia entre uma e duas, pra dar a mistura
+    // pedida ("25 + 8", "35 - 11", "35 - 8" etc). Multiplicação e Divisão
+    // nunca mais sorteiam o fator/quociente trivial 1 (nem "2 × 1" nem
+    // "8 ÷ 8") — a dificuldade continua de uma casa, só filtra o caso ×1.
     // ─────────────────────────────────────────────────────────────────
 
     void GerarPergunta(out int a, out int b)
@@ -472,22 +479,33 @@ public class GameManager : MonoBehaviour
             switch (faseAtual)
             {
                 case 1:
-                    a = Random.Range(1, 5); b = Random.Range(1, 9 - a + 1);
+                    // V3: 'a' sempre duas casas (10-99), 'b' sempre uma casa
+                    // (1-9) — só UM dos dois valores tem duas casas, não os dois.
+                    a = Random.Range(10, 100);
+                    b = Random.Range(1, 10);
                     correctAnswer = a + b;
                     perguntaAtual = $"{a} + {b}";
                     break;
                 case 2:
-                    correctAnswer = Random.Range(1, 9); b = Random.Range(1, 9);
-                    a = correctAnswer + b;
+                    // V3: 'a' sempre duas casas (10-99), 'b' sempre uma casa
+                    // (1-9) — como b < 10 <= a, o resultado fica sempre positivo.
+                    a = Random.Range(10, 100);
+                    b = Random.Range(1, 10);
+                    correctAnswer = a - b;
                     perguntaAtual = $"{a} - {b}";
                     break;
                 case 3:
-                    correctAnswer = Random.Range(1, 9); b = Random.Range(2, 9);
+                    // V3: quociente nunca é 1 (sem "8 ÷ 8" etc — mesmo espírito
+                    // do "sem ×1" da multiplicação), divisor continua 2-8.
+                    correctAnswer = Random.Range(2, 9); b = Random.Range(2, 9);
                     a = b * correctAnswer;
                     perguntaAtual = $"{a} ÷ {b}";
                     break;
                 case 4:
-                    a = Random.Range(1, 4); b = Random.Range(1, 9 / a + 1);
+                    // V3: fatores nunca são 1 (sem "2 × 1", "3 × 1" etc),
+                    // só de 2 a 4 — produto continua de uma casa.
+                    a = Random.Range(2, 4);
+                    b = Random.Range(2, 9 / a + 1);
                     correctAnswer = a * b;
                     perguntaAtual = $"{a} × {b}";
                     break;
@@ -513,28 +531,34 @@ public class GameManager : MonoBehaviour
         switch (faseAtual)
         {
             case 1:
-                a = Random.Range(1, 4); b = Random.Range(1, 4);
-                c = Random.Range(1, 9 - a - b + 1);
+                // V3: só 'a' tem duas casas; 'b' e 'c' ficam sempre em uma casa.
+                a = Random.Range(10, 60);
+                b = Random.Range(1, 10);
+                c = Random.Range(1, 10);
                 correctAnswer = a + b + c;
                 perguntaAtual = $"{a} + {b} + {c}";
                 break;
             case 2:
-                correctAnswer = Random.Range(1, 5);
-                b = Random.Range(1, 4); c = Random.Range(1, 4);
-                a = correctAnswer + b + c;
+                // V3: só 'a' (o minuendo montado) tem duas casas; 'b' e 'c'
+                // ficam sempre em uma casa. 'a' começa em 19 pra garantir
+                // resultado positivo mesmo no pior caso (b=c=9 → 19-9-9=1).
+                b = Random.Range(1, 10);
+                c = Random.Range(1, 10);
+                a = Random.Range(19, 60);
+                correctAnswer = a - b - c;
                 perguntaAtual = $"{a} - {b} - {c}";
                 break;
-            case 3: // Divisão — (a ÷ b) + c com b sendo 8 ou 9
+            case 3: // Divisão — (a ÷ b) + c, quociente nunca 1 (V3)
                 b = Random.Range(0, 2) == 0 ? 8 : 9;
-                int quoc = Random.Range(1, 5);
+                int quoc = Random.Range(2, 5);
                 a = b * quoc;
                 c = Random.Range(1, 6);
                 correctAnswer = quoc + c;
                 perguntaAtual = $"({a} ÷ {b}) + {c}";
                 break;
-            case 4: // Multiplicação — (a × b) + c com a sendo 8 ou 9
+            case 4: // Multiplicação — (a × b) + c, 'b' nunca 1 (V3)
                 a = Random.Range(0, 2) == 0 ? 8 : 9;
-                b = Random.Range(1, 5);
+                b = Random.Range(2, 5);
                 c = Random.Range(1, 6);
                 correctAnswer = (a * b) + c;
                 perguntaAtual = $"({a} × {b}) + {c}";
