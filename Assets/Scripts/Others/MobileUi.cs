@@ -31,12 +31,14 @@ public class MobileUI : MonoBehaviour
     [SerializeField] private float espacoEntreEsqDirPercentual = 0.45f;
 
     // ── Estado interno ────────────────────────────────────────────────
-    private bool isMobile;
+    // ALTERADO: static para sobreviver ao SceneManager.LoadScene (Jogar Novamente)
+    private static bool isMobile = false;
     private PlayerController player;
 
+    // ALTERADO: static também, pelo mesmo motivo
     // devicePixelRatio vindo do JavaScript (window.devicePixelRatio)
     // Valor padrão 1 para desktop; celulares costumam ter 2, 3 ou mais
-    private float devicePixelRatio = 1f;
+    private static float devicePixelRatio = 1f;
 
     private bool pressEsq = false;
     private bool pressDir = false;
@@ -49,7 +51,7 @@ public class MobileUI : MonoBehaviour
     void Awake()
     {
         instance = this;
-        isMobile = false;
+        // ALTERADO: removido o "isMobile = false" daqui, senão ele zerava a cada reload
 
 #if UNITY_EDITOR
         if (testarComoMobileNoEditor) isMobile = true;
@@ -144,8 +146,7 @@ public class MobileUI : MonoBehaviour
         // Usa a menor dimensão para ser consistente em portrait e landscape
         float base_ = Mathf.Min(W, H);
 
-        // Tamanho do botão = 20% da menor dimensão da tela
-        // Ajuste este valor conforme preferir (0.18 = menor, 0.25 = maior)
+        // Tamanho do botão = 12% da menor dimensão da tela
         float btnSize = base_ * 0.12f;
 
         float margem = btnSize * 0.3f;
@@ -157,6 +158,7 @@ public class MobileUI : MonoBehaviour
         rDir = new Rect(margemLateral + btnSize + margem, baseY, btnSize, btnSize);
         rAtira = new Rect(W - btnSize - margemLateral, baseY, btnSize, btnSize);
     }
+
     // ── Desenho ───────────────────────────────────────────────────────
 
     void OnGUI()

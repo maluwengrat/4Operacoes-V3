@@ -178,8 +178,24 @@ public class GameManager : MonoBehaviour
     // Controle de jogo
     // ─────────────────────────────────────────────────────────────────
 
+    // NOVO: destrói inimigos e power-ups que ainda estiverem na cena
+    void LimparCena()
+    {
+        foreach (var e in FindAll<Enemy>()) Destroy(e.gameObject);
+        foreach (var p in FindObjectsByType<PowerUp>(FindObjectsInactive.Exclude)) Destroy(p.gameObject);
+    }
+
     public void IniciarJogo()
     {
+        // ALTERADO: cancela Invokes pendentes (SpawnWave, FaseCompleta etc.) e limpa a cena
+        CancelInvoke();
+        LimparCena();
+        Time.timeScale = 1f;
+        tempoLentoAtivo = false;
+        tempoLentoTimer = 0f;
+        timerAtivo = false;
+        isBossWave = false;
+
         GameResultSender.instance?.IniciarNovaPartida();
         PlayerController player = FindFirstObjectByType<PlayerController>(FindObjectsInactive.Include);
         if (player != null) player.gameObject.SetActive(true);
@@ -212,6 +228,10 @@ public class GameManager : MonoBehaviour
 
     public void ReiniciarDaFase()
     {
+        // ALTERADO: cancela Invokes pendentes e limpa a cena
+        CancelInvoke();
+        LimparCena();
+
         Time.timeScale = 1f;
         score = 0;
         faseAtual = faseAoErrar;
@@ -303,8 +323,14 @@ public class GameManager : MonoBehaviour
 
     public void VoltarAoMenu()
     {
+        // ALTERADO: cancela Invokes pendentes (era isso que gerava a onda extra)
+        CancelInvoke();
+
         jogoIniciado = false;
         timerAtivo = false;
+        tempoLentoAtivo = false;
+        tempoLentoTimer = 0f;
+        Time.timeScale = 1f;
         historicoContas.Clear();
         historicoAcertos.Clear();
         operacoesErradas.Clear();
@@ -315,16 +341,16 @@ public class GameManager : MonoBehaviour
         questionText.gameObject.SetActive(false);
         if (bossQuestionText != null) bossQuestionText.gameObject.SetActive(false);
 
-        // ADICIONADO: desativa a nave e destrói inimigos/power-ups restantes
+        // Desativa a nave e destrói inimigos/power-ups restantes
         PlayerController player = FindFirstObjectByType<PlayerController>(FindObjectsInactive.Include);
         if (player != null) player.gameObject.SetActive(false);
-        foreach (var e in FindAll<Enemy>()) Destroy(e.gameObject);
-        foreach (var p in FindObjectsByType<PowerUp>(FindObjectsInactive.Exclude)) Destroy(p.gameObject);
+        LimparCena();
 
         MostrarSomente(menuPrincipalPanel);
         if (BackgroundManager.Instance != null) BackgroundManager.Instance.SetMainMenu();
         if (SoundManager.instance != null) SoundManager.instance.PararMusica();
     }
+
     // ─────────────────────────────────────────────────────────────────
     // Power-ups
     // ─────────────────────────────────────────────────────────────────
@@ -379,7 +405,6 @@ public class GameManager : MonoBehaviour
         else
             tempoBase = tempoLimiteOnda * 1.2f;
 
-        // ← estas linhas estavam faltando!
         timerOnda = Mathf.Max(10f, tempoBase - (ondasCompletas * 3f));
         timerAtivo = true;
         timerText.gameObject.SetActive(true);
@@ -407,8 +432,8 @@ public class GameManager : MonoBehaviour
         // Boss 1 (onda 6) — mais lento
         // Boss 2 (onda 7) — mais rápido e difícil
         bool bossFinal = (ondasCompletas == 6);
-        float velocidade = bossFinal  // ← F maiúsculo
-                    ? 0.5f + (faseAtual * 0.1f)   // Boss 1 — mais lento
+        float velocidade = bossFinal
+            ? 0.5f + (faseAtual * 0.1f)   // Boss 1 — mais lento
             : 0.8f + (faseAtual * 0.15f); // Boss 2 — mais rápido
 
         SpawnInimigosComNumeros(velocidade);
@@ -587,11 +612,11 @@ public class GameManager : MonoBehaviour
     float[] GerarPosicoesX(int quantidade)
     {
         float[] pos = new float[quantidade];
-        float larg = 22f;  // era 14f
+        float larg = 22f;
         float espac = larg / quantidade;
         float inicio = -larg / 2f + espac / 2f;
         for (int i = 0; i < quantidade; i++)
-            pos[i] = inicio + (i * espac) + Random.Range(-0.3f, 0.3f);  // variação menor para não sobrepor
+            pos[i] = inicio + (i * espac) + Random.Range(-0.3f, 0.3f);
 
         for (int i = 0; i < pos.Length; i++)
         {
@@ -736,7 +761,6 @@ public class GameManager : MonoBehaviour
 
     public void ExecutarGameOver()
     {
-
         FeedbackManager.instance.Esconder();
         hudPanel.SetActive(false);
         MostrarSomente(null);
